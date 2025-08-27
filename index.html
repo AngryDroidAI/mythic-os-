@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mythic OS — Modular Desktop</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #111;
+      font-family: 'Segoe UI', sans-serif;
+      color: #eee;
+    }
+    #desktop {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+    }
+    .window {
+      position: absolute;
+      width: 80vw;
+      height: 80vh;
+      background-color: #222;
+      border: 2px solid #666;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+    }
+    .window-header {
+      background-color: #333;
+      padding: 10px;
+      font-weight: bold;
+      cursor: move;
+      color: #00ffcc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .window-header button {
+      margin-left: 8px;
+      background: #444;
+      color: #eee;
+      border: none;
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .window-content {
+      flex: 1;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .minimize-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: #222;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-top: 1px solid #444;
+      z-index: 1000;
+    }
+    .minimize-bar button {
+      background-color: #444;
+      color: #eee;
+      border: none;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .controls {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .controls input[type="file"],
+    .controls input[type="text"],
+    .controls button {
+      background-color: #222;
+      color: #eee;
+      border: 1px solid #555;
+      padding: 6px;
+      border-radius: 4px;
+    }
+    .footer {
+      position: fixed;
+      bottom: 60px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+      color: #f0f0f0;
+      font-size: 14px;
+      line-height: 1.6;
+      z-index: 999;
+    }
+    .footer img {
+      width: 150px;
+      margin-bottom: 10px;
+    }
+    .footer a {
+      color: #ffcc00;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="desktop"></div>
+
+  <div class="controls">
+    <input type="file" accept="image/*" onchange="uploadBackground(event)" />
+    <input type="text" id="urlInput" placeholder="Paste app URL..." />
+    <button onclick="addApp()">Add App</button>
+  </div>
+
+  <div class="minimize-bar" id="minimizeBar"></div>
+
+  <div class="footer">
+    <img src="https://files.catbox.moe/nnfnor.png" alt="Neuroforge Certified Badge">
+    <p>
+      © 2025 Angry Droid AI Project. All rights reserved.<br>
+      Created by Chris Berry, CEO and founder.<br>
+      This interface and its code are licensed for personal, educational, and non-commercial use only.<br>
+      This is a registered creative module of the Angry Droid ecosystem.<br>
+      Contact: <a href="mailto:angrydroid@offilive.com">angrydroid@offilive.com</a>
+    </p>
+  </div>
+
+  <script>
+    const desktop = document.getElementById('desktop');
+    const minimizeBar = document.getElementById('minimizeBar');
+    let appCounter = 0;
+
+    const savedLayout = JSON.parse(localStorage.getItem('mythicLayout') || '[]');
+    savedLayout.forEach(app => spawnWindow(app.title, app.url, app.x, app.y, app.visible));
+
+    function spawnWindow(title, url, x = 60, y = 60, visible = true) {
+      const index = appCounter++;
+      const win = document.createElement('div');
+      win.className = 'window';
+      win.id = `window-${index}`;
+      win.style.left = `${x}px`;
+      win.style.top = `${y}px`;
+      if (!visible) win.style.display = 'none';
+
+      win.innerHTML = `
+        <div class="window-header" id="header-${index}">
+          ${title}
+          <div>
+            <button onclick="minimizeWindow(${index})">➖</button>
+            <button onclick="closeWindow(${index})">❌</button>
+          </div>
+        </div>
+        <div class="window-content">
+          <iframe src="${url}"></iframe>
+        </div>
+      `;
+      desktop.appendChild(win);
+      makeDraggable(win, document.getElementById(`header-${index}`));
+      saveLayout();
+    }
+
+    function minimizeWindow(index) {
+      const win = document.getElementById(`window-${index}`);
+      win.style.display = 'none';
+
+      const btn = document.createElement('button');
+      btn.textContent = win.querySelector('.window-header').childNodes[0].textContent.trim();
+      btn.onclick = () => {
+        win.style.display = 'flex';
+        btn.remove();
+        saveLayout();
+      };
+      minimizeBar.appendChild(btn);
+      saveLayout();
+    }
+
+    function closeWindow(index) {
+      const win = document.getElementById(`window-${index}`);
+      win.remove();
+      saveLayout();
+    }
+
+    function uploadBackground(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          desktop.style.backgroundImage = `url('${e.target.result}')`;
+          localStorage.setItem('mythicBackground', e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function addApp() {
+      const url = document.getElementById('urlInput').value.trim();
+      if (url) {
+        spawnWindow(`App ${appCounter + 1}`, url);
+        document.getElementById('urlInput').value = '';
+      }
+    }
+
+    function makeDraggable(win, header) {
+      let offsetX = 0, offsetY = 0, isDragging = false;
+
+      header.addEventListener('mousedown', e => {
+        isDragging = true;
+        offsetX = e.clientX - win.offsetLeft;
+        offsetY = e.clientY - win.offsetTop;
+        win.style.zIndex = 100;
+      });
+
+      document.addEventListener('mousemove', e => {
+        if (isDragging) {
+          win.style.left = `${e.clientX - offsetX}px`;
+          win.style.top = `${e.clientY - offsetY}px`;
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+        win.style.zIndex = 10;
+        saveLayout();
+      });
+    }
+
+    function saveLayout() {
+      const windows = document.querySelectorAll('.window');
+      const layout = [];
+      windows.forEach(win => {
+        const index = win.id.split('-')[1];
+        const header = win.querySelector('.window-header').childNodes[0].textContent.trim();
+        const iframe = win.querySelector('iframe');
+        layout.push({
+          title: header,
+          url: iframe.src,
+          x: parseInt(win.style.left),
+          y: parseInt(win.style.top),
+          visible: win.style.display !== 'none'
+        });
+      });
+      localStorage.setItem('mythicLayout', JSON.stringify(layout));
+    }
+
+    const savedBg = localStorage.getItem('mythicBackground');
+    if (savedBg) desktop.style.backgroundImage = `url('${savedBg}')`;
+  </script>
+</body>
+</html>

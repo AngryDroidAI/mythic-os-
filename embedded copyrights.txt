@@ -1,0 +1,11 @@
+<!-- Angry Droid Attribution Footer -->
+<div style="text-align: center; margin-top: 40px; font-family: 'Courier New', monospace; color: #f0f0f0;">
+  <img src="https://files.catbox.moe/nnfnor.png" alt="Neuroforge Certified Badge" style="width: 150px; margin-bottom: 10px;">
+  <p style="font-size: 14px; line-height: 1.6;">
+    © 2025 Angry Droid AI Project. All rights reserved.<br>
+    Created by Chris Berry, CEO and founder.<br>
+    This interface and its code are licensed for personal, educational, and non-commercial use only.<br>
+    This is a registered creative module of the Angry Droid ecosystem.<br>
+    Contact: <a href="mailto:angrydroid@offilive.com" style="color: #ffcc00;">angrydroid@offilive.com</a>
+  </p>
+</div>
